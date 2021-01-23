@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>カラーペッタン|自由に背景色が変えれるツール</title>
+        <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Noto+Sans+JP:400,700" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0">
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+    </head>
+    <body>
+        <div id="app">
+            <div class="back_color" id="bgColor" v-bind:style="bgChange">
+            </div>
+                <div class="push_range" v-on:click="viewButton"></div>
+                <div class="setting_view_button_div" v-show="user.isViewButton">
+                    <button class="setting_view_button" v-on:click="viewSetting"><i class="fas fa-cogs setting_icon"></i></button>
+                </div>
+                <div class="setting_menu" v-show="user.isViewSetting">
+                    <h1 class="setting_title">設定画面</h1>
+                    <h2 class="setting_subtitle">モードの変更</h2>
+                    <div class="mode_choice">
+                        <input type="radio" name="color_mode" v-on:click="changeGS" checked class="color_choice_radio" id="GS">
+                        <label for="GS">単色</label>
+                        <div style="height: 10px"></div>
+                        <input type="radio" name="color_mode" v-on:click="changeSG" class="color_choice_radio" id="SG">
+                        <label for="SG">グラデーション</label>
+                    </div>
+                    <h2 class="setting_subtitle">色の変更</h2>
+                    <table class="view_button_table">
+                        <tr>
+                            <td>
+                                <label for="viewTopColorButton">
+                                    <h3 class="gradation_title" v-show="user.isGradation">上部分</h3>
+                                </label>
+                            </td>
+                            <td>
+                                <button class="gradation_color_view" v-on:click="changeViewToTop" v-if="isPhone && user.isGradation" id="viewTopColorButton">
+                                    <i class="fas fa-chevron-right" v-bind:style="changeViewToTopButton"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="color_num_list" v-show="(user.isGradation && !isPhone) || user.gradationChangeViewColor.top">
+                        <p class="color_font">R：<input type="number" v-model="user.color.red" min="0" max="255" class="setting_color_num"></p>
+                        <p class="color_font">G：<input type="number" v-model="user.color.green" min="0" max="255" class="setting_color_num"></p>
+                        <p class="color_font">B：<input type="number" v-model="user.color.blue" min="0" max="255" class="setting_color_num"></p>
+                        <input type="color" value="#ffffff" v-on:input="colorBord" id="colorBord">
+                    </div>
+                    <div class="gradation_color" v-show="user.isGradation">
+                        <table class="view_button_table">
+                            <tr>
+                                <td>
+                                    <label for="viewBottomColorButton">
+                                        <h3 class="gradation_title" v-show="user.isGradation">下部分</h3>
+                                    </label>
+                                </td>
+                                <td>
+                                    <button class="gradation_color_view" v-on:click="changeViewToBottom" v-if="isPhone && user.isGradation" id="viewBottomColorButton">
+                                        <i class="fas fa-chevron-right" v-bind:style="changeViewToBottomButton"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="color_num_list" v-show="(user.isGradation && !isPhone) || user.gradationChangeViewColor.bottom">
+                            <p class="color_font">R：<input type="number" v-model="user.gradation.red" min="0" max="255" class="setting_color_num"></p>
+                            <p class="color_font">G：<input type="number" v-model="user.gradation.green" min="0" max="255" class="setting_color_num"></p>
+                            <p class="color_font">B：<input type="number" v-model="user.gradation.blue" min="0" max="255" class="setting_color_num"></p>
+                            <input type="color" value="#ffffff" v-on:input="gradationBord" id="gradationBord">
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </body>
+</html>
+
+<style>
+body{
+    font-family: 'Lato', 'Noto Sans JP', 'ヒラギノ角ゴ ProN', 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, 'ＭＳ Ｐゴシック', 'MS PGothic', sans-serif;
+    margin: 0;
+}
+
+.back_color{
+    position: absolute;
+    top: 0;
+    width:100vw;
+    height: 100vh;
+    margin: 0;
+    z-index: -1;
+}
+
+.push_range{
+    position: absolute;
+    top: 0;
+    width: 100vw;
+    height: 50vh;
+    margin: 0;
+    z-index: 1;
+}
+
+.setting_view_button_div{
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.setting_view_button_div:before{
+    z-index: 2;
+    content: "";
+    display: block;
+    padding-top: 100vh;
+}
+
+.setting_view_button{
+    z-index: 2;
+    position: absolute;
+    top: 2%;
+    right: 2%;
+    min-width: 32px;
+    min-height: 21px;
+    width: 70px;
+    height: 70px;
+    padding: 0;
+    border: none;
+    background-color: #eee;
+    border-radius: 25px;
+    outline: none;
+}
+
+.setting_view_button:hover{
+    background-color: #ddd;
+}
+
+.setting_icon{
+    font-size: 2em;
+    color: #444;
+}
+
+.setting_menu{
+    width: 60%;
+    z-index: 3;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    border: 2px solid #aaa;
+    padding-bottom: 20px;
+    border-radius: 20px;
+}
+
+.setting_title{
+    text-align: center;
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 0;
+}
+
+.setting_subtitle{
+    text-align: center;
+    font-size: 1.7em;
+    color: #555;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.color_num_list{
+    text-align: center;
+}
+
+.color_font{
+    font-size: 25px;
+    margin:5px;
+    color: #444;
+}
+
+.setting_color_num{
+    position: relative;
+    top: 25%;
+    transform: translateY(-25%);
+    height: 20px;
+}
+
+.setting_color_num:focus{
+    border-color: #C0D85C;
+    box-shadow: 2px 2px 5px 0 rgba(0,0,0,0.2);
+}
+
+.gradation_title{
+    text-align: center;
+    color: #666;
+    margin: 0;
+    margin-top: 5px;
+}
+
+.mode_choice{
+    text-align: center;
+}
+
+.gradation_color_view{
+    border: none;
+    background-color: rgba(255, 255, 255, 0);
+    color: #444;
+    font-size: 1.2em;
+    outline: none;
+    margin: 0;
+    margin-top: 5px;
+}
+
+.view_button_table{
+    margin: auto;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.color_choice_radio{
+    display: none;
+}
+
+.color_choice_radio + label{
+    padding-left: 20px;
+    position:relative;
+    margin-right: 20px;
+}
+.color_choice_radio + label::before{
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 15px;
+    height: 15px;
+    border: 1px solid #999;
+    border-radius: 50%;
+}
+.color_choice_radio:checked + label{
+  color: #1184d0;
+}
+
+.color_choice_radio:checked + label::after{
+    content:"";
+    display: block;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 11px;
+    height: 11px;
+    background: #1184d0;
+    border-radius: 50%;
+}
+
+input[type=number]{
+    font-size: 20px;
+}
+
+
+input[type=color] {
+  font-size: 16px;
+  transform: scale(0.8);
+  height: 20px;
+  background-color: #fff;
+}
+
+@media (max-width: 768px){
+    .mode_choice{
+        text-align: left;
+        padding-left: 25%;
+    }
+    .setting_menu{
+        width: 80%;
+    }
+}
+
+</style>
+
+<script>
+let user = {
+    color:{
+        red: 255,
+        green: 255,
+        blue: 255
+    },
+    gradation:{
+        red: 255,
+        green: 255,
+        blue: 255
+    },
+    hexColor:"",
+    hexGradation: "",
+    getColorCode(){
+        let colorList = {
+            color:{
+                red: "",
+                green: "",
+                blue: ""
+            },
+            gradation:{
+                red: "",
+                green: "",
+                blue: ""
+            }
+        }
+        for(let i = 0;i < 2;i++){
+            let colorNumList
+            let sendNumList = {
+                red: "",
+                green: "",
+                blue: ""
+            }
+            if(!i) colorNumList = this.color
+            else colorNumList = this.gradation
+            for(let k = 0;k < 3;k++){
+                let checkColorNum;
+                if(k === 0) checkColorNum = colorNumList.red
+                else if(k === 1) checkColorNum = colorNumList.green
+                else if(k === 2) checkColorNum = colorNumList.blue
+                checkColorNum = Number(checkColorNum).toString(16)
+                if(checkColorNum.length === 1) checkColorNum = "0" + checkColorNum
+                if(k === 0) sendNumList.red = checkColorNum
+                else if(k === 1) sendNumList.green = checkColorNum
+                else if(k === 2) sendNumList.blue = checkColorNum
+            }
+            if(!i) colorList.color = sendNumList
+            else colorList.gradation = sendNumList
+        }
+        return colorList
+    },
+    type: "simple",
+    isViewSetting: false,
+    isViewButton: false,
+    isGradation: false,
+    gradationChangeViewColor:{
+        top: true,
+        bottom: false
+    }
+}
+
+let vm = new Vue({
+    el:"#app",
+    data:{
+        user:user
+    },
+    methods:{
+        viewSetting: function(){
+            user.isViewSetting = !user.isViewSetting
+        },
+        viewButton: function(){
+            user.isViewButton = !user.isViewButton
+            user.isViewSetting = false
+        },
+        changeSG: function(){
+            user.isGradation = true
+        },
+        changeGS: function(){
+            user.isGradation = false
+        },
+        colorBord: function(){
+            let hexColor = document.getElementById("colorBord").value
+            hexColor = hexColor.substr(1);     //ハッシュタグの削除
+            user.color.red = parseInt(hexColor.substr(0,2),16)
+            user.color.green = parseInt(hexColor.substr(2,2),16)
+            user.color.blue = parseInt(hexColor.substr(4,2),16)
+        },
+        gradationBord: function(){
+            let hexColor = document.getElementById("gradationBord").value
+            hexColor = hexColor.substr(1);     //ハッシュタグの削除
+            user.gradation.red = parseInt(hexColor.substr(0,2),16)
+            user.gradation.green = parseInt(hexColor.substr(2,2),16)
+            user.gradation.blue = parseInt(hexColor.substr(4,2),16)
+        },
+        changeViewToTop: function(){
+            user.gradationChangeViewColor.top = true
+            user.gradationChangeViewColor.bottom = false
+        },
+        changeViewToBottom: function(){
+            user.gradationChangeViewColor.top = false
+            user.gradationChangeViewColor.bottom = true
+        }
+    },
+    computed:{
+        bgChange: function(){
+            let hexNumColor = user.getColorCode()
+            let hexColor = `#${hexNumColor.color.red}${hexNumColor.color.green}${hexNumColor.color.blue}`
+            let hexGradation = `#${hexNumColor.gradation.red}${hexNumColor.gradation.green}${hexNumColor.gradation.blue}`
+            user.hexColor = hexColor
+            user.hexGradation = hexGradation
+            return {
+                background: user.isGradation ? `linear-gradient(${hexColor},${hexGradation})` : `rgb(${user.color.red}, ${user.color.green}, ${user.color.blue})`
+            }
+        },
+        isPhone: function(){
+            if (navigator.userAgent.match(/iPhone|Android.+Mobile/)) return true
+            else return false
+        },
+        changeViewToTopButton: function(){
+            let angle
+            if(user.gradationChangeViewColor.top) angle = "90"
+            else angle = "0"
+            return{
+                transform: `rotate(${angle}deg)`
+            }
+        },
+        changeViewToBottomButton: function(){
+            let angle
+            if(user.gradationChangeViewColor.bottom) angle = "90"
+            else angle = "0"
+            return{
+                transform: `rotate(${angle}deg)`
+            }
+        }
+    }
+})
+</script>
